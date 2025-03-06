@@ -1,0 +1,54 @@
+
+
+@if (hero) {
+
+    <h1 class="text-center text-primary text-4xl font-medium my-4">Detalles del Héroe</h1>
+
+    <div class="grid col-11 flex justify-content -center mb-5">
+
+        <mat-card  class="col-10 md:col-4 flex align-items-center justify-content-center">
+            <img class="hero-image border-round-lg shadow-4 " [src]="hero | heroImage" [alt]="hero.superhero" mat-card-image  />
+        </mat-card>
+    
+        <mat-card class="col-10 md:col-7 ml-1">
+        
+                <div class="">
+                    <mat-card-header>
+                        <mat-card-title class="text-3xl font-bold mb-2">{{ hero.superhero }}</mat-card-title>
+                        <mat-card-subtitle class="text-xl text-primary mb-4">{{ hero.alter_ego }}</mat-card-subtitle>
+                    </mat-card-header>
+        
+                    <mat-card-content>
+                        <h3 class="text-xl font-medium mb-2">Aparición</h3>
+                        <span>{{ hero.first_appearance }}</span>
+        
+                        <h3 class="text-xl font-medium mb-2">Characters</h3>
+                        <mat-chip-set>
+                            @for (item of hero.characters.split(','); track $index) {
+                                <mat-chip>{{ item }}</mat-chip>
+                            }
+                        </mat-chip-set>
+        
+                        <h3 class="text-xl font-medium mb-2">Publisher</h3>
+                        <span>{{ hero.publisher }}</span>
+        
+                        <h3 class="text-xl font-medium mb-2">Alter Ego</h3>
+                        <span>{{ hero.alter_ego }}</span>
+    
+                        <mat-card-actions class="flex justify-content-end mt-4">
+                            <button mat-flat-button color="primary" (click)="goBack()" class="p-button-raised">
+                              <mat-icon>arrow_back</mat-icon> Regresar
+                            </button>
+                        </mat-card-actions>
+                    </mat-card-content>
+                </div>
+        </mat-card>
+
+    </div>
+}@else{
+    <mat-grid-list cols="1">
+        <mat-grid-tile>
+            <mat-spinner></mat-spinner>
+        </mat-grid-tile>
+    </mat-grid-list>
+}
