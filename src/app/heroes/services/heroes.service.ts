@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { Hero } from '../interfaces/hero.interface';
-import { Observable, of } from 'rxjs';
+import { map, Observable, of, tap } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -31,10 +31,43 @@ export class HeroesService {
   /**
    * Retorna todos los héroes desde LocalStorage.
    */
-  getHeroes(): Observable<Hero[]> {
-    const heroes: Hero[] = JSON.parse(localStorage.getItem(this.localStorageKey) || '[]');
-    return of(heroes);
-  }
+  /* getHeroes(): Observable<Hero[]> {
+    const localData = localStorage.getItem('heroes');
+
+    if(localData) {
+      const heroes: Hero[] = JSON.parse(localData);
+      return of(heroes); // ya hay datos
+    }
+
+    // No hay datos, se hace el fetch al RAW
+    return this.http.get<{ heroes: Hero[] }> (this.rawDataUrl).pipe(
+      map(resp => resp.heroes),
+      tap(heroes => localStorage.setItem('heroes', JSON.stringify(heroes)))
+    );
+    //const heroes: Hero[] = JSON.parse(localStorage.getItem(this.localStorageKey) || '[]');
+    //return of(heroes);
+  } */
+
+    getHeroes(): Observable<Hero[]> {
+      const localData = localStorage.getItem(this.localStorageKey);
+
+      if (localData && localData.length > 0) {
+        try {
+          
+          const heroes: Hero[] = JSON.parse(localData);
+          return of(heroes);
+        } catch (e) {
+          console.error('Error al parsear localStorage:', e);
+          localStorage.removeItem(this.localStorageKey);
+        }
+      }
+
+      // Si no hay datos válidos en localStorage, se hace fetch
+      return this.http.get<Hero[]>(this.rawDataUrl).pipe(
+        tap(heroes => localStorage.setItem(this.localStorageKey, JSON.stringify(heroes)))
+      );
+    }
+
 
   /**
    * Retorna un héroe por su ID.
