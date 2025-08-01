@@ -4,6 +4,7 @@ import { LayoutPageComponent as HeroLayoutComponent } from './heroes/pages/layou
 import { Error404PageComponent } from './shared/pages/error404-page/error404-page.component';
 import { AuthGuard } from './auth/guards/auth.guard';
 import { PublicGuard } from './auth/guards/public.guard';
+import { getHeroPrerenderParams } from '../server';
 
 export const routes: Routes = [
     {
@@ -32,9 +33,15 @@ export const routes: Routes = [
                 path: 'new-hero', loadComponent: () => import('./heroes/pages/new-page/new-page.component').then(c => c.NewPageComponent)
             },
             { path: 'search', loadComponent: () => import('./heroes/pages/search-page/search-page.component').then(c => c.SearchPageComponent) },
-            { path: 'edit/:id', loadComponent: () => import('./heroes/pages/new-page/new-page.component').then(c => c.NewPageComponent) },
+            { path: 'edit/:id',
+                loadComponent: () => import('./heroes/pages/new-page/new-page.component').then(c => c.NewPageComponent),
+                //data: { getPrerenderParams: getHeroPrerenderParams }
+             },
             { path: 'list', loadComponent: () => import('./heroes/pages/list-page/list-page.component').then(c => c.ListPageComponent) },
-            { path: ':id', loadComponent: () => import('./heroes/pages/hero-page/hero-page.component').then(c => c.HeroPageComponent) },
+            { path: ':id',
+                loadComponent: () => import('./heroes/pages/hero-page/hero-page.component').then(c => c.HeroPageComponent),
+                //data: { getPrerenderParams: getHeroPrerenderParams }
+            },
             { path: '', redirectTo: 'list', pathMatch: 'full' },
             { path: '**', redirectTo: 'list' }
         ],

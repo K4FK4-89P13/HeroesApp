@@ -1,88 +1,93 @@
-import { inject, Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http'
-import { catchError, from, map, Observable, of } from 'rxjs';
-
+import { Injectable } from '@angular/core';
 import { Hero } from '../interfaces/hero.interface';
-import { environments } from '../../../environments/environments';
+import { Observable, of } from 'rxjs';
+import { HttpClient } from '@angular/common/http';
+import { v4 as uuidv4 } from 'uuid';
 
-@Injectable({
-  providedIn: 'root'
-})
+@Injectable({ providedIn: 'root' })
 export class HeroesService {
 
-  private baseUrl: string = environments.baseUrl;
+  private localStorageKey = 'heroes';
+  private rawDataUrl = 'https://raw.githubusercontent.com/K4FK4-89P13/HeroesApp/refs/heads/main/public/data/dbheroes.json'; // Cambia esta URL
 
-  private http = inject(HttpClient);
-
-  private _heroes: Hero[] = [];
-
-  constructor() {
-    this.loadHeroes();
+  constructor(private http: HttpClient) {
+    this.initStorage();
   }
 
-  private async loadHeroes() {
-    try{
-      const response = await fetch('data/db.json');
-      const data = await response.json();
-      this._heroes = data.heroes;
-    } catch (error) {
-      console.log("Error al cargar los héroes:", error);
+  /**
+   * Inicializa LocalStorage si está vacío.
+   * Descarga los datos desde GitHub Raw la primera vez.
+   */
+  private initStorage(): void {
+    const data = localStorage.getItem(this.localStorageKey);
+    if (!data) {
+      this.http.get<Hero[]>(this.rawDataUrl)
+        .subscribe(initialHeroes => {
+          localStorage.setItem(this.localStorageKey, JSON.stringify(initialHeroes));
+        });
     }
   }
 
+  /**
+   * Retorna todos los héroes desde LocalStorage.
+   */
   getHeroes(): Observable<Hero[]> {
-    //return this.http.get<Hero[]>(`${ this.baseUrl }/heroes`)
-    if (this._heroes.length > 0) {
-      return of(this._heroes);
-    }
-  
-    return from(this.loadHeroes().then(() => this._heroes));
+    const heroes: Hero[] = JSON.parse(localStorage.getItem(this.localStorageKey) || '[]');
+    return of(heroes);
   }
 
-  getHeroById(id: string): Observable<Hero|undefined> {
-    /* return this.http.get<Hero>(`${this.baseUrl}/heroes/${id}`)
-      .pipe(
-        catchError(error => of(undefined))
-      ) */
-    const hero = this._heroes.find( h => h.id === id );
+  /**
+   * Retorna un héroe por su ID.
+   * @param id - ID del héroe a buscar
+   */
+  getHeroById(id: string): Observable<Hero | undefined> {
+    const heroes: Hero[] = JSON.parse(localStorage.getItem(this.localStorageKey) || '[]');
+    const hero = heroes.find((h: Hero) => h.id === id);
     return of(hero);
   }
 
-  getSuggestions(query: string): Observable<Hero[]> {
-    //return this.http.get<Hero[]>(`${this.baseUrl}/heroes?q=${query}`);
-    const suggestions = this._heroes.filter( h => 
-      h.superhero.toLowerCase().includes(query.toLowerCase())
-    );
-    return of(suggestions);
+  /**
+   * Agrega un nuevo héroe al LocalStorage.
+   * Se le asigna un ID único con uuid.
+   * @param hero - Héroe sin ID (se genera automáticamente)
+   */
+  addHero(hero: Omit<Hero, 'id'>): Observable<Hero> {
+    const heroes: Hero[] = JSON.parse(localStorage.getItem(this.localStorageKey) || '[]');
+    const newHero: Hero = { id: uuidv4(), ...hero };
+    heroes.push(newHero);
+    localStorage.setItem(this.localStorageKey, JSON.stringify(heroes));
+    return of(newHero);
   }
 
-  // Añadir Heroe
-  addHero(hero: Hero): Observable<Hero> {
-    //return this.http.post<Hero>(`${ this.baseUrl }/heroes`, hero);
-    this._heroes.push(hero);
-    return of(hero);
+  /**
+   * Actualiza un héroe existente por su ID.
+   * @param updatedHero - Objeto héroe completo (incluye ID)
+   */
+  updateHero(updatedHero: Hero): Observable<Hero> {
+    let heroes: Hero[] = JSON.parse(localStorage.getItem(this.localStorageKey) || '[]');
+    heroes = heroes.map((h: Hero) => h.id === updatedHero.id ? updatedHero : h);
+    localStorage.setItem(this.localStorageKey, JSON.stringify(heroes));
+    return of(updatedHero);
   }
 
-  // Actualizar Heroe
-  updateHero(hero: Hero): Observable<Hero> {
-    if(!hero.id) throw Error('Hero id is required');
-    //return this.http.patch<Hero>(`${ this.baseUrl }/heroes/${hero.id}`, hero);
-    const index = this._heroes.findIndex( h => h.id === hero.id );
-    if( index !== -1 ) {
-      this._heroes[index] = hero;
-    }
-    return of(hero);
-  }
-
-  // Eliminar Heroe
+  /**
+   * Elimina un héroe por su ID.
+   * @param id - ID del héroe a eliminar
+   */
   deleteHeroById(id: string): Observable<boolean> {
-    /* return this.http.delete<Hero>(`${ this.baseUrl }/heroes/${id}`)
-      .pipe(
-        catchError(err => of(false)),
-        map(res => true) 
-      )*/
-    const initialLength = this._heroes.length;
-    this._heroes = this._heroes.filter( h => h.id !== id );
-    return of(this._heroes.length < initialLength);
+    const heroes: Hero[] = JSON.parse(localStorage.getItem(this.localStorageKey) || '[]');
+    const newHeroes = heroes.filter((h: Hero) => h.id !== id);
+    localStorage.setItem(this.localStorageKey, JSON.stringify(newHeroes));
+    return of(true);
   }
+
+
+  getSuggestions(term: string): Observable<Hero[]> {
+  const heroes: Hero[] = JSON.parse(localStorage.getItem(this.localStorageKey) || '[]');
+  const filtered = heroes.filter((h: Hero) =>
+    h.superhero.toLowerCase().includes(term.toLowerCase())
+  );
+  return of(filtered);
+}
+
 }

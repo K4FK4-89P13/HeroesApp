@@ -64,3 +64,16 @@ if (isMainModule(import.meta.url)) {
  * Request handler used by the Angular CLI (for dev-server and during build) or Firebase Cloud Functions.
  */
 export const reqHandler = createNodeRequestHandler(app);
+
+export async function getHeroPrerenderParams() {
+  try {
+    const res = await fetch('/data/db.json'); // Ruta relativa en el servidor
+    const db = await res.json();
+
+    // Devuelve los parámetros en el formato que Angular necesita
+    return db.heroes.map((hero: { id: string }) => ({ id: hero.id }));
+  } catch (err) {
+    console.error("Error al cargar héroes en rutas:", err);
+    return [];
+  }
+}
